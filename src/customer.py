@@ -108,27 +108,40 @@ class Customer:
         if self.auth:
             user_subscription = check_user_subscription(self.email)
             if action:
-                if action == 'update':
-                    if not user_subscription.websites[f'{unique_key}']:
-                        raise ValueError(messages['not_found'])
-                    user_subscription.websites[f'{unique_key}'][0].url = site_url
-                    user_subscription.commit()
-                    return user_subscription.websites[f'{unique_key}'][0]
-
-                elif action == 'delete':
-                    if not user_subscription.websites[f'{unique_key}']:
-                        raise ValueError(messages['not_found'])
-                    del user_subscription.websites[f'{unique_key}']
-                    return None
-
-                elif action == 'list':
-                    websites = [site for site in user_subscription.websites.keys()]
-                    return websites
-            else:
-                raise ValueError(messages('no_action'))
+                actor = get_action(action)
+                return actor(site_url, unique_key, user_subscription)
         else:
             raise ValueError(messages['not_authenticated'])
 
+def get_action(action):
+    if action == 'update':
+        return _update_website
+    elif action == 'delete':
+        return _delete_website
+    elif action == 'list':
+        return _list_website
+    else:
+        raise ValueError(messages['no_action'])
+
+def _update_website(*args):
+    url, unique_key, subscription = args
+    if not subscription.websites[f'{unique_key}']:
+        raise ValueError(messages['not_found'])
+    subscription.websites[f'{unique_key}'][0].url = url
+    subscription.commit()
+    return subscription.websites[f'{unique_key}'][0]
+
+def _delete_website(*args):
+    unique_key, subscription = args[1], args[2]
+    if not subscription.websites[f'{unique_key}']:
+        raise ValueError(messages['not_found'])
+    del subscription.websites[f'{unique_key}']
+    return None
+
+def _list_website(*args):
+    subscription = args[2]
+    websites = [site for site in subscription.websites.keys()]
+    return websites
 
 class CustomerSubscription:
     """
