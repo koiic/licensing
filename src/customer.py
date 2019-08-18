@@ -4,7 +4,7 @@ from datetime import datetime, timezone, timedelta
 from src.utilities.messages import messages
 from src.data import db
 from src.utilities.helpers import check_site_limit, check_user_subscription
-from src.website import Website
+from src.website import Website, _update_website, _delete_website, _list_website
 
 
 class Customer:
@@ -87,7 +87,6 @@ class Customer:
         :return: details of a new Website object
         """
         if self.auth:
-            # import pdb; pdb.set_trace()
             user_subscription = check_user_subscription(self.email)
             website_allowed = user_subscription.plan.website_allowance
             check_site_limit(website_allowed, user_subscription.websites)
@@ -123,25 +122,6 @@ def get_action(action):
     else:
         raise ValueError(messages['no_action'])
 
-def _update_website(*args):
-    url, unique_key, subscription = args
-    if not subscription.websites[f'{unique_key}']:
-        raise ValueError(messages['not_found'])
-    subscription.websites[f'{unique_key}'][0].url = url
-    subscription.commit()
-    return subscription.websites[f'{unique_key}'][0]
-
-def _delete_website(*args):
-    unique_key, subscription = args[1], args[2]
-    if not subscription.websites[f'{unique_key}']:
-        raise ValueError(messages['not_found'])
-    del subscription.websites[f'{unique_key}']
-    return None
-
-def _list_website(*args):
-    subscription = args[2]
-    websites = [site for site in subscription.websites.keys()]
-    return websites
 
 class CustomerSubscription:
     """
